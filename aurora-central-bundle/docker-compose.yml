@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: aurora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: aurora_pacs
+      POSTGRES_USER: aurora
+      POSTGRES_PASSWORD: aurora123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - pacs-net
+
+  orthanc-central:
+    image: orthancteam/orthanc:25.10.5
+    container_name: orthanc-central
+    restart: unless-stopped
+    ports:
+      - "8043:8042"
+      - "4243:4242"
+    volumes:
+      - ./orthanc-central/orthanc.json:/etc/orthanc/orthanc.json:ro
+      - orthanc_central_storage:/var/lib/orthanc/db
+    command: ["/etc/orthanc/orthanc.json"]
+    networks:
+      - pacs-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: aurora-nginx
+    restart: unless-stopped
+    depends_on:
+      - orthanc-central
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - pacs-net
+
+volumes:
+  postgres_data:
+  orthanc_central_storage:
+
+networks:
+  pacs-net:
+    driver: bridge

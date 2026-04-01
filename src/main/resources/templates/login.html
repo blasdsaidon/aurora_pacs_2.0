@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Aurora PACS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            width: 320px;
+        }
+        h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            margin-bottom: 10px;
+        }
+        .logout {
+            color: green;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>Aurora PACS</h2>
+
+    <div th:if="${param.error}" class="error">
+        Usuario o contraseña incorrectos
+    </div>
+
+    <div th:if="${param.logout}" class="logout">
+        Sesión cerrada correctamente
+    </div>
+
+    <form method="post" action="/login">
+        <input type="text" name="username" placeholder="Usuario" required />
+        <input type="password" name="password" placeholder="Contraseña" required />
+        <button type="submit">Ingresar</button>
+    </form>
+</div>
+</body>
+</html>

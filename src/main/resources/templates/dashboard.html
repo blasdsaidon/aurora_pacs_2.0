@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Aurora PACS</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+            color: #111;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button, .btn-link {
+            border: none;
+            background: #4f46e5;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        button.secondary, .btn-link.secondary {
+            background: #e5e7eb;
+            color: #111;
+        }
+
+        button[disabled] {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        button:hover, .btn-link:hover {
+            opacity: 0.92;
+        }
+
+        .status {
+            margin: 12px 0 18px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.info {
+            background: #eef2ff;
+            color: #1e3a8a;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 980px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+
+        code {
+            font-size: 12px;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 6px;
+            word-break: break-all;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chip.ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .chip.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .empty {
+            padding: 24px;
+            text-align: center;
+            color: #666;
+            border: 1px dashed #d1d5db;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        .user-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        form {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="topbar">
+        <div class="user-box">
+            <h1>Aurora PACS</h1>
+            <div class="muted" id="userInfo">Cargando usuario...</div>
+        </div>
+
+        <div class="actions">
+            <button type="button" class="secondary" onclick="loadData()">Actualizar</button>
+            <a class="btn-link secondary" href="/api/auth/me" target="_blank">Ver sesión</a>
+            <a class="btn-link secondary" href="/admin/users">Admin usuarios</a>
+            <form method="post" action="/logout">
+                <button type="submit" class="secondary">Cerrar sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="statusBox" class="status info"></div>
+
+    <div class="table-wrap">
+        <table id="studiesTable">
+            <thead>
+            <tr>
+                <th>Paciente</th>
+                <th>ID paciente</th>
+                <th>Fecha</th>
+                <th>Modalidad</th>
+                <th>Descripción</th>
+                <th>Viewer</th>
+                <th>StudyInstanceUID</th>
+                <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody id="studiesBody">
+            <tr>
+                <td colspan="8">Cargando estudios...</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="emptyBox" class="empty" style="display:none;">
+        No hay estudios para mostrar.
+    </div>
+</div>
+
+<script>
+    async function fetchJson(url) {
+        const response = await fetch(url, {
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error ${response.status} al consultar ${url}`);
+        }
+
+        return response.json();
+    }
+
+    function showStatus(message, type = 'info') {
+        const box = document.getElementById('statusBox');
+        box.textContent = message;
+        box.className = `status show ${type}`;
+    }
+
+    function hideStatus() {
+        const box = document.getElementById('statusBox');
+        box.className = 'status';
+        box.textContent = '';
+    }
+
+    function safe(value) {
+        return value ?? '';
+    }
+
+    function formatDate(yyyymmdd) {
+        if (!yyyymmdd || yyyymmdd.length !== 8) {
+            return safe(yyyymmdd);
+        }
+        const y = yyyymmdd.substring(0, 4);
+        const m = yyyymmdd.substring(4, 6);
+        const d = yyyymmdd.substring(6, 8);
+        return `${d}/${m}/${y}`;
+    }
+
+    function renderViewerStatus(viewerReady) {
+        if (viewerReady) {
+            return `<span class="chip ok">Listo</span>`;
+        }
+        return `<span class="chip pending">Pendiente</span>`;
+    }
+
+    async function openViewer(studyInstanceUid, viewerReady) {
+        if (!viewerReady) {
+            showStatus('El estudio todavía no está disponible para el visor.', 'error');
+            return;
+        }
+
+        try {
+            showStatus('Obteniendo URL del visor...');
+            const data = await fetchJson(`/api/studies/${encodeURIComponent(studyInstanceUid)}/viewer-url`);
+            hideStatus();
+
+            const viewerUrl = data.viewerUrl || data.url;
+            if (!viewerUrl) {
+                showStatus('No se recibió la URL del visor.', 'error');
+                return;
+            }
+
+            window.open(viewerUrl, '_blank');
+        } catch (error) {
+            console.error(error);
+            showStatus('No se pudo abrir el visor.', 'error');
+        }
+    }
+
+    function renderStudies(studies) {
+        const tbody = document.getElementById('studiesBody');
+        const emptyBox = document.getElementById('emptyBox');
+
+        tbody.innerHTML = '';
+
+        if (!Array.isArray(studies) || studies.length === 0) {
+            emptyBox.style.display = 'block';
+            document.getElementById('studiesTable').style.display = 'none';
+            return;
+        }
+
+        emptyBox.style.display = 'none';
+        document.getElementById('studiesTable').style.display = 'table';
+
+        studies.forEach(study => {
+            const tr = document.createElement('tr');
+
+            const patientName = safe(study.patientName);
+            const patientId = safe(study.patientId);
+            const studyDate = formatDate(study.studyDate);
+            const modality = safe(study.modality);
+            const description = safe(study.studyDescription);
+            const studyInstanceUid = safe(study.studyInstanceUid);
+            const viewerReady = !!study.viewerReady;
+
+            tr.innerHTML = `
+                <td>${patientName}</td>
+                <td>${patientId}</td>
+                <td>${studyDate}</td>
+                <td><span class="chip">${modality}</span></td>
+                <td>${description}</td>
+                <td>${renderViewerStatus(viewerReady)}</td>
+                <td><code>${studyInstanceUid}</code></td>
+                <td>
+                    <div class="row-actions">
+                        <button type="button" ${viewerReady ? '' : 'disabled'}
+                            onclick="openViewer('${studyInstanceUid.replace(/'/g, "\\'")}', ${viewerReady})">
+                            Abrir visor
+                        </button>
+                        <a class="btn-link secondary" href="/api/studies/${encodeURIComponent(studyInstanceUid)}" target="_blank">Ver JSON</a>
+                    </div>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function loadData() {
+        try {
+            showStatus('Cargando usuario y estudios...');
+            const [me, studies] = await Promise.all([
+                fetchJson('/api/auth/me'),
+                fetchJson('/api/studies')
+            ]);
+
+            document.getElementById('userInfo').textContent =
+                `Usuario: ${safe(me.username)} | Rol: ${safe(me.role)} | PatientId: ${safe(me.patientId)}`;
+
+            renderStudies(studies);
+            hideStatus();
+        } catch (error) {
+            console.error(error);
+            showStatus('No se pudieron cargar los datos del dashboard.', 'error');
+        }
+    }
+
+    loadData();
+</script>
+</body>
+</html>

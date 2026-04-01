@@ -1,0 +1,31 @@
+{
+  "Name": "Aurora Orthanc Central",
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "AuthenticationEnabled": true,
+  "RegisteredUsers": {
+    "orthanc": "orthanc"
+  },
+  "RemoteAccessAllowed": true,
+  "DicomAet": "ORTHANC_CENTRAL",
+  "DicomPort": 4242,
+  "HttpPort": 8042,
+  "HttpServerEnabled": true,
+  "DicomServerEnabled": true,
+  "OverwriteInstances": false,
+  "DefaultEncoding": "Latin1",
+  "Plugins": [
+    "/usr/share/orthanc/plugins-available/libOrthancDicomWeb.so",
+    "/usr/share/orthanc/plugins-available/libOrthancExplorer2.so",
+    "/usr/share/orthanc/plugins-available/libOrthancGdcm.so",
+    "/usr/share/orthanc/plugins-available/libStoneWebViewer.so"
+  ],
+  "DicomWeb": {
+    "Enable": true,
+    "Root": "/dicom-web/"
+  },
+  "StoneWebViewer": {
+    "Enable": true,
+    "DicomWebRoot": "/dicom-web/"
+  }
+}

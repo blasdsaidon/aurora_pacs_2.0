@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Usuarios y accesos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f6f8;
+            color: #111;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 24px auto;
+            background: white;
+            padding: 24px;
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        }
+
+        h1, h2 {
+            margin-top: 0;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn, button {
+            border: none;
+            background: #4f46e5;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .btn.secondary, button.secondary {
+            background: #e5e7eb;
+            color: #111;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 18px;
+            background: #fff;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 6px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .status {
+            margin: 12px 0 18px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.show {
+            display: block;
+        }
+
+        .status.info {
+            background: #eef2ff;
+            color: #1e3a8a;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status.ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 950px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+
+        code {
+            font-size: 12px;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 6px;
+            word-break: break-all;
+        }
+
+        .small-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="topbar">
+        <div>
+            <h1>Administración de usuarios y accesos</h1>
+            <div class="muted">Crear usuarios y asignar estudios a pacientes.</div>
+        </div>
+        <div class="actions">
+            <a class="btn secondary" href="/dashboard">Volver al dashboard</a>
+            <button type="button" class="secondary" onclick="loadAll()">Actualizar</button>
+            <form method="post" action="/logout" style="margin:0;">
+                <button type="submit" class="secondary">Cerrar sesión</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="statusBox" class="status info"></div>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Crear usuario</h2>
+
+            <label for="username">Username</label>
+            <input id="username" type="text" placeholder="Ej: paciente1">
+
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" placeholder="Contraseña">
+
+            <label for="role">Rol</label>
+            <select id="role">
+                <option value="PATIENT">PATIENT</option>
+                <option value="DOCTOR">DOCTOR</option>
+                <option value="ADMIN">ADMIN</option>
+            </select>
+
+            <label for="patientId">Patient ID</label>
+            <input id="patientId" type="text" placeholder="Solo para pacientes">
+
+            <div style="margin-top:14px;">
+                <button type="button" onclick="createUser()">Crear usuario</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Asignar estudio manualmente</h2>
+
+            <label for="assignUserId">Usuario</label>
+            <select id="assignUserId"></select>
+
+            <label for="studyInstanceUid">StudyInstanceUID</label>
+            <input id="studyInstanceUid" type="text" placeholder="Pegá el StudyInstanceUID">
+
+            <div style="margin-top:14px;">
+                <button type="button" onclick="assignStudyManual()">Asignar estudio</button>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h2>Usuarios</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Rol</th>
+                        <th>Patient ID</th>
+                        <th>Accesos</th>
+                    </tr>
+                    </thead>
+                    <tbody id="usersBody">
+                    <tr>
+                        <td colspan="5">Cargando usuarios...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h2>Accesos del usuario seleccionado</h2>
+            <div class="muted" id="selectedUserInfo">Seleccioná un usuario para ver sus estudios asignados.</div>
+            <div class="table-wrap" style="margin-top:12px;">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>ID acceso</th>
+                        <th>StudyInstanceUID</th>
+                    </tr>
+                    </thead>
+                    <tbody id="accessBody">
+                    <tr>
+                        <td colspan="2">Sin datos todavía.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card full-width">
+            <h2>Estudios disponibles en Orthanc</h2>
+            <div class="muted">Podés asignarlos a un usuario sin copiar el UID manualmente.</div>
+            <div class="table-wrap" style="margin-top:12px;">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Paciente</th>
+                        <th>ID paciente</th>
+                        <th>Fecha</th>
+                        <th>Modalidad</th>
+                        <th>Descripción</th>
+                        <th>StudyInstanceUID</th>
+                        <th>Asignar a</th>
+                    </tr>
+                    </thead>
+                    <tbody id="studyCatalogBody">
+                    <tr>
+                        <td colspan="7">Cargando estudios...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let usersCache = [];
+    let studiesCache = [];
+
+    async function fetchJson(url, options = {}) {
+        const response = await fetch(url, {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            },
+            ...options
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Error ${response.status}: ${text}`);
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return response.json();
+        }
+        return response.text();
+    }
+
+    function showStatus(message, type = 'info') {
+        const box = document.getElementById('statusBox');
+        box.textContent = message;
+        box.className = `status show ${type}`;
+    }
+
+    function safe(value) {
+        return value ?? '';
+    }
+
+    function formatDate(yyyymmdd) {
+        if (!yyyymmdd || String(yyyymmdd).length !== 8) {
+            return safe(yyyymmdd);
+        }
+        const s = String(yyyymmdd);
+        return `${s.substring(6,8)}/${s.substring(4,6)}/${s.substring(0,4)}`;
+    }
+
+    function patientUsers() {
+        return usersCache.filter(u => u.role === 'PATIENT');
+    }
+
+    function userOptionsHtml(selectedUserId = '') {
+        return patientUsers().map(user =>
+            `<option value="${user.id}" ${String(user.id) === String(selectedUserId) ? 'selected' : ''}>${user.username} (${user.patientId || '-'})</option>`
+        ).join('');
+    }
+
+    function renderUsers(users) {
+        usersCache = Array.isArray(users) ? users : [];
+
+        const body = document.getElementById('usersBody');
+        const select = document.getElementById('assignUserId');
+
+        body.innerHTML = '';
+        select.innerHTML = userOptionsHtml();
+
+        if (!usersCache.length) {
+            body.innerHTML = `<tr><td colspan="5">No hay usuarios.</td></tr>`;
+            return;
+        }
+
+        usersCache.forEach(user => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${safe(user.id)}</td>
+                <td>${safe(user.username)}</td>
+                <td>${safe(user.role)}</td>
+                <td>${safe(user.patientId)}</td>
+                <td>
+                    <div class="small-actions">
+                        <button type="button" onclick="loadUserAccess(${user.id}, '${String(user.username).replace(/'/g, "\\'")}')">Ver accesos</button>
+                    </div>
+                </td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+
+    function renderAccesses(accesses) {
+        const body = document.getElementById('accessBody');
+        body.innerHTML = '';
+
+        if (!Array.isArray(accesses) || !accesses.length) {
+            body.innerHTML = `<tr><td colspan="2">No hay accesos asignados.</td></tr>`;
+            return;
+        }
+
+        accesses.forEach(access => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${safe(access.id)}</td>
+                <td><code>${safe(access.studyInstanceUid)}</code></td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+
+    function renderStudyCatalog(studies) {
+        studiesCache = Array.isArray(studies) ? studies : [];
+        const body = document.getElementById('studyCatalogBody');
+        body.innerHTML = '';
+
+        if (!studiesCache.length) {
+            body.innerHTML = `<tr><td colspan="7">No hay estudios disponibles.</td></tr>`;
+            return;
+        }
+
+        studiesCache.forEach((study, index) => {
+            const uid = safe(study.studyInstanceUid);
+            const rowId = `assignUserSelect_${index}`;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${safe(study.patientName)}</td>
+                <td>${safe(study.patientId)}</td>
+                <td>${formatDate(study.studyDate)}</td>
+                <td><span class="chip">${safe(study.modality)}</span></td>
+                <td>${safe(study.studyDescription)}</td>
+                <td><code>${uid}</code></td>
+                <td>
+                    <div class="small-actions">
+                        <select id="${rowId}" style="min-width:220px;">
+                            <option value="">Seleccionar paciente</option>
+                            ${userOptionsHtml()}
+                        </select>
+                        <button type="button" onclick="assignStudyFromCatalog('${uid.replace(/'/g, "\\'")}', '${rowId}')">Asignar</button>
+                    </div>
+                </td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+
+    async function loadUsers() {
+        const users = await fetchJson('/api/admin/users');
+        renderUsers(users);
+    }
+
+    async function loadStudiesCatalog() {
+        const studies = await fetchJson('/api/studies');
+        renderStudyCatalog(studies);
+    }
+
+    async function loadUserAccess(userId, username) {
+        try {
+            showStatus('Cargando accesos del usuario...');
+            const accesses = await fetchJson(`/api/admin/study-access/user/${userId}`);
+            document.getElementById('selectedUserInfo').textContent = `Usuario seleccionado: ${username} (id=${userId})`;
+            renderAccesses(accesses);
+            showStatus('Accesos cargados.', 'ok');
+        } catch (error) {
+            console.error(error);
+            showStatus('No se pudieron cargar los accesos del usuario.', 'error');
+        }
+    }
+
+    async function createUser() {
+        try {
+            const payload = {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value,
+                patientId: document.getElementById('patientId').value.trim()
+            };
+
+            if (!payload.username || !payload.password || !payload.role) {
+                showStatus('Completá username, contraseña y rol.', 'error');
+                return;
+            }
+
+            showStatus('Creando usuario...');
+            await fetchJson('/api/admin/users', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('patientId').value = '';
+
+            await loadUsers();
+            await loadStudiesCatalog();
+            showStatus('Usuario creado correctamente.', 'ok');
+        } catch (error) {
+            console.error(error);
+            showStatus('No se pudo crear el usuario.', 'error');
+        }
+    }
+
+    async function assignStudy(payload, userIdForReload) {
+        await fetchJson('/api/admin/study-access', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        await loadUserAccess(userIdForReload, getUsernameById(userIdForReload));
+    }
+
+    async function assignStudyManual() {
+        try {
+            const payload = {
+                userId: Number(document.getElementById('assignUserId').value),
+                studyInstanceUid: document.getElementById('studyInstanceUid').value.trim()
+            };
+
+            if (!payload.userId || !payload.studyInstanceUid) {
+                showStatus('Seleccioná usuario y completá el StudyInstanceUID.', 'error');
+                return;
+            }
+
+            showStatus('Asignando estudio...');
+            await assignStudy(payload, payload.userId);
+            document.getElementById('studyInstanceUid').value = '';
+            showStatus('Estudio asignado correctamente.', 'ok');
+        } catch (error) {
+            console.error(error);
+            showStatus('No se pudo asignar el estudio.', 'error');
+        }
+    }
+
+    async function assignStudyFromCatalog(studyInstanceUid, selectId) {
+        try {
+            const userId = Number(document.getElementById(selectId).value);
+            if (!userId) {
+                showStatus('Seleccioná un paciente antes de asignar.', 'error');
+                return;
+            }
+
+            showStatus('Asignando estudio desde catálogo...');
+            await assignStudy({
+                userId,
+                studyInstanceUid
+            }, userId);
+
+            showStatus('Estudio asignado correctamente.', 'ok');
+        } catch (error) {
+            console.error(error);
+            showStatus('No se pudo asignar el estudio desde el catálogo.', 'error');
+        }
+    }
+
+    function getUsernameById(userId) {
+        const user = usersCache.find(u => Number(u.id) === Number(userId));
+        return user ? user.username : `id=${userId}`;
+    }
+
+    async function loadAll() {
+        try {
+            showStatus('Cargando datos...');
+            await loadUsers();
+            await loadStudiesCatalog();
+            showStatus('Datos cargados.', 'ok');
+        } catch (error) {
+            console.error(error);
+            showStatus('No se pudieron cargar los datos.', 'error');
+        }
+    }
+
+    loadAll();
+</script>
+</body>
+</html>

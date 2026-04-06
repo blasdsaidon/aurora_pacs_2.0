@@ -49,6 +49,9 @@ public class Study {
 
     @Column(name = "sync_status", length = 64)
     private String syncStatus;
+    
+    @Column(name = "last_sync_error", length = 2000)
+    private String lastSyncError;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -162,6 +165,14 @@ public class Study {
 
     public String getSyncStatus() {
         return syncStatus;
+    }
+    
+    public String getLastSyncError() {
+    return lastSyncError;
+    }
+    
+    public void setLastSyncError(String lastSyncError) {
+    this.lastSyncError = lastSyncError;
     }
 
     public void setSyncStatus(String syncStatus) {

@@ -9,6 +9,8 @@ public class StudySummaryDto {
     private String modality;
     private String studyDescription;
     private boolean viewerReady;
+    private String syncStatus;
+    private String lastSyncError;
 
     public StudySummaryDto() {
     }
@@ -27,6 +29,26 @@ public class StudySummaryDto {
         this.modality = modality;
         this.studyDescription = studyDescription;
         this.viewerReady = viewerReady;
+    }
+
+    public StudySummaryDto(String studyInstanceUid,
+                           String patientName,
+                           String patientId,
+                           String studyDate,
+                           String modality,
+                           String studyDescription,
+                           boolean viewerReady,
+                           String syncStatus,
+                           String lastSyncError) {
+        this.studyInstanceUid = studyInstanceUid;
+        this.patientName = patientName;
+        this.patientId = patientId;
+        this.studyDate = studyDate;
+        this.modality = modality;
+        this.studyDescription = studyDescription;
+        this.viewerReady = viewerReady;
+        this.syncStatus = syncStatus;
+        this.lastSyncError = lastSyncError;
     }
 
     public String getStudyInstanceUid() {
@@ -83,5 +105,21 @@ public class StudySummaryDto {
 
     public void setViewerReady(boolean viewerReady) {
         this.viewerReady = viewerReady;
+    }
+
+    public String getSyncStatus() {
+        return syncStatus;
+    }
+
+    public void setSyncStatus(String syncStatus) {
+        this.syncStatus = syncStatus;
+    }
+
+    public String getLastSyncError() {
+        return lastSyncError;
+    }
+
+    public void setLastSyncError(String lastSyncError) {
+        this.lastSyncError = lastSyncError;
     }
 }

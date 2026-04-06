@@ -95,6 +95,7 @@ public class StudyService {
         study.setStorageKey(blankToNull(command.storageKey()));
         study.setViewerReady(command.viewerReady());
         study.setSyncStatus(blankToNull(command.syncStatus()));
+        study.setLastSyncError(blankToNull(command.lastSyncError()));
 
         return studyRepository.save(study);
     }
@@ -111,7 +112,9 @@ public class StudyService {
             study.getStudyDate(),
             study.getModality(),
             study.getStudyDescription(),
-            study.isViewerReady()
+            study.isViewerReady(),
+            study.getSyncStatus(),
+            study.getLastSyncError()
     );
 }
 
@@ -131,6 +134,7 @@ public class StudyService {
             String storageType,
             String storageKey,
             boolean viewerReady,
-            String syncStatus
+            String syncStatus,
+            String lastSyncError
     ) {}
 }

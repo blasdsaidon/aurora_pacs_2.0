@@ -16,7 +16,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1320px;
             margin: 30px auto;
             background: white;
             padding: 24px;
@@ -103,7 +103,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 980px;
+            min-width: 1250px;
         }
 
         th, td {
@@ -147,6 +147,11 @@
             color: #92400e;
         }
 
+        .chip.failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
         .row-actions {
             display: flex;
             gap: 8px;
@@ -166,6 +171,13 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+        }
+
+        .error-cell {
+            max-width: 260px;
+            white-space: normal;
+            color: #991b1b;
+            font-size: 12px;
         }
 
         form {
@@ -203,13 +215,15 @@
                 <th>Modalidad</th>
                 <th>Descripción</th>
                 <th>Viewer</th>
+                <th>Sync</th>
+                <th>Error sync</th>
                 <th>StudyInstanceUID</th>
                 <th>Acciones</th>
             </tr>
             </thead>
             <tbody id="studiesBody">
             <tr>
-                <td colspan="8">Cargando estudios...</td>
+                <td colspan="10">Cargando estudios...</td>
             </tr>
             </tbody>
         </table>
@@ -266,6 +280,24 @@
         return `<span class="chip pending">Pendiente</span>`;
     }
 
+    function renderSyncStatus(syncStatus) {
+        const value = safe(syncStatus).toUpperCase();
+
+        if (value === 'SYNCED') {
+            return `<span class="chip ok">SYNCED</span>`;
+        }
+        if (value === 'FAILED') {
+            return `<span class="chip failed">FAILED</span>`;
+        }
+        if (value === 'SYNCING') {
+            return `<span class="chip pending">SYNCING</span>`;
+        }
+        if (value === 'PENDING') {
+            return `<span class="chip pending">PENDING</span>`;
+        }
+        return `<span class="chip">${safe(syncStatus) || '-'}</span>`;
+    }
+
     async function openViewer(studyInstanceUid, viewerReady) {
         if (!viewerReady) {
             showStatus('El estudio todavía no está disponible para el visor.', 'error');
@@ -315,6 +347,8 @@
             const description = safe(study.studyDescription);
             const studyInstanceUid = safe(study.studyInstanceUid);
             const viewerReady = !!study.viewerReady;
+            const syncStatus = safe(study.syncStatus);
+            const lastSyncError = safe(study.lastSyncError);
 
             tr.innerHTML = `
                 <td>${patientName}</td>
@@ -323,6 +357,8 @@
                 <td><span class="chip">${modality}</span></td>
                 <td>${description}</td>
                 <td>${renderViewerStatus(viewerReady)}</td>
+                <td>${renderSyncStatus(syncStatus)}</td>
+                <td class="error-cell">${lastSyncError || '-'}</td>
                 <td><code>${studyInstanceUid}</code></td>
                 <td>
                     <div class="row-actions">

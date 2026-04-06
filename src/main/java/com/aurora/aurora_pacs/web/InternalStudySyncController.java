@@ -41,7 +41,8 @@ public class InternalStudySyncController {
                 request.storageType(),
                 request.storageKey(),
                 request.viewerReady(),
-                request.syncStatus()
+                request.syncStatus(),
+                request.lastSyncError()
         ));
 
         return toResponse(saved);
@@ -65,7 +66,8 @@ public class InternalStudySyncController {
                         request.storageType(),
                         request.storageKey(),
                         request.viewerReady(),
-                        request.syncStatus()
+                        request.syncStatus(),
+                        request.lastSyncError()
                 )))
                 .map(this::toResponse)
                 .toList();
@@ -99,7 +101,8 @@ public class InternalStudySyncController {
             String storageType,
             String storageKey,
             boolean viewerReady,
-            String syncStatus
+            String syncStatus,
+            String lastSyncError
     ) {}
 
     public record StudySyncResponse(
